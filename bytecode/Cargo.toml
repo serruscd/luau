@@ -1,0 +1,9 @@
+[package]
+name = "bytecode"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+num_enum = "0.7.6"
+bytes = { path = "../bytes" }
+winnow = "1.0.1"

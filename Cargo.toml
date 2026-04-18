@@ -1,0 +1,8 @@
+[workspace]
+resolver = "3"
+members = ["bytecode", "bytes","compiler"]
+
+[workspace.dependencies]
+bytecode = { path = "bytecode" }
+bytes = { path = "bytes" }
+compiler = { path = "compiler" }
