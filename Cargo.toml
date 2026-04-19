@@ -1,8 +1,8 @@
-[workspace]
-resolver = "3"
-members = ["bytecode", "bytes","compiler"]
+[package]
+name = "luau"
+version = "0.1.0"
+edition = "2024"
 
-[workspace.dependencies]
-bytecode = { path = "bytecode" }
-bytes = { path = "bytes" }
-compiler = { path = "compiler" }
+[dependencies]
+num_enum = "0.7.6"
+winnow = "1.0.1"

@@ -1,6 +1,6 @@
-use winnow::{ModalResult, Parser, binary};
+use winnow::{ModalResult, Parser, binary, token};
 
-use crate::error::error;
+use crate::bytes::error::error;
 
 pub struct ByteReader<'a> {
     data: &'a mut &'a [u8],
@@ -76,9 +76,9 @@ impl<'a> ByteReader<'a> {
         }
     }
 
-    pub fn varint_u64(&mut self) -> ModalResult<u32> {
-        let mut result: u32 = 0;
-        let mut shift: u32 = 0;
+    pub fn varint_u64(&mut self) -> ModalResult<u64> {
+        let mut result: u64 = 0;
+        let mut shift: u64 = 0;
 
         loop {
             let byte = binary::u8.parse_next(self.data)?;
@@ -87,7 +87,7 @@ impl<'a> ByteReader<'a> {
                 return error("invalid leb128 encoding");
             }
 
-            result |= (byte as u32 & 0x7F) << shift;
+            result |= (byte as u64 & 0x7F) << shift;
             shift += 7;
 
             if (byte & 0x80) == 0 {
@@ -98,5 +98,10 @@ impl<'a> ByteReader<'a> {
                 return error("value too big");
             }
         }
+    }
+
+    pub fn raw(&mut self, len: usize) -> ModalResult<&'a [u8]> {
+        let data = token::take(len).parse_next(self.data)?;
+        Ok(data)
     }
 }
