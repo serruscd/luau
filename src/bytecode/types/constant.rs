@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
 use crate::bytecode::common::bytecode::LuauConstantType;
-use crate::bytecode::types::proto::Proto;
 use crate::bytecode::types::strings::Strings;
 use crate::bytes::reader::ByteReader;
 
+#[cfg(feature = "write")]
+use crate::bytes::writer::ByteWriter;
+
 #[derive(Clone, Debug)]
-pub enum Constant<'a> {
+#[repr(u8)]
+pub enum Constant {
     Nil,
     Boolean(bool),
     Number(f64),
@@ -14,17 +17,16 @@ pub enum Constant<'a> {
     String(String),
     Import(String, Option<String>, Option<String>),
     Table(Vec<String>),
-    ConstantTable(HashMap<String, Constant<'a>>),
-    Closure(&'a Proto<'a>),
+    ConstantTable(HashMap<String, Constant>),
+    Closure(usize),
     Integer(i64),
 }
 
-impl<'a> Constant<'a> {
+impl Constant {
     pub fn from_reader(
         reader: &mut ByteReader,
         string_table: &Strings,
-        constant_table: &'a Vec<Constant>,
-        proto_table: &'a Vec<Proto>,
+        constant_table: Vec<Constant>,
     ) -> Option<Self> {
         let constant_type = LuauConstantType::try_from(reader.u8().ok()?).ok()?;
         match constant_type {
@@ -123,10 +125,7 @@ impl<'a> Constant<'a> {
             }
             LuauConstantType::LBC_CONSTANT_CLOSURE => {
                 let proto_index = reader.varint_u32().ok()? as usize;
-                match proto_table.get(proto_index) {
-                    Some(proto) => Some(Constant::Closure(proto)),
-                    _ => None,
-                }
+                Some(Constant::Closure(proto_index as usize))
             }
             LuauConstantType::LBC_CONSTANT_INTEGER => {
                 let is_negative = reader.u8().ok()? != 0;
@@ -137,6 +136,65 @@ impl<'a> Constant<'a> {
                     magnitude as i64
                 };
                 Some(Constant::Integer(value))
+            }
+        }
+    }
+
+    #[cfg(feature = "write")]
+    pub fn to_writer(&self, writer: &mut ByteWriter) {
+        match self {
+            Constant::Nil => writer.u8(0),
+            Constant::Boolean(b) => {
+                writer.u8(1);
+                writer.u8(*b as u8)
+            }
+            Constant::Number(n) => {
+                writer.u8(2);
+                writer.f64(*n);
+            }
+            Constant::Vector { x, y, z, w } => {
+                writer.u8(3);
+                writer.f32(*x);
+                writer.f32(*y);
+                writer.f32(*z);
+                writer.f32(*w);
+            }
+            Constant::String(s) => {
+                writer.u8(4);
+                writer.raw(s.as_bytes());
+            }
+            Constant::Import(module, name, alias) => {
+                writer.u8(5);
+                writer.raw(module.as_bytes());
+                if let Some(name) = name {
+                    writer.raw(name.as_bytes());
+                }
+                if let Some(alias) = alias {
+                    writer.raw(alias.as_bytes());
+                }
+            }
+            Constant::Table(t) => {
+                writer.u8(6);
+                writer.varint_u32(t.len() as u32);
+                for key in t {
+                    writer.raw(key.as_bytes());
+                }
+            }
+            Constant::ConstantTable(t) => {
+                writer.u8(7);
+                writer.varint_u32(t.len() as u32);
+                for (key, value) in t {
+                    writer.raw(key.as_bytes());
+                    value.to_writer(writer);
+                }
+            }
+            Constant::Closure(i) => {
+                writer.u8(8);
+                writer.varint_u32(*i as u32);
+            }
+            Constant::Integer(i) => {
+                writer.u8(9);
+                writer.varint_u64(*i as u64);
             }
         }
     }

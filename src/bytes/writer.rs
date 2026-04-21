@@ -72,4 +72,8 @@ impl ByteWriter {
             self.data.push(byte | 0x80);
         }
     }
+
+    pub fn raw(&mut self, bytes: &[u8]) {
+        self.data.extend_from_slice(bytes);
+    }
 }

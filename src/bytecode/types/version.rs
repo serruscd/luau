@@ -3,6 +3,10 @@ use crate::{
     bytes::reader::ByteReader,
 };
 
+#[cfg(feature = "write")]
+use crate::bytes::writer::ByteWriter;
+
+#[derive(Debug)]
 pub struct Version {
     pub bytecode: u8,
     pub types: Option<u8>,
@@ -30,6 +34,14 @@ impl Version {
                 bytecode,
                 types: None,
             })
+        }
+    }
+
+    #[cfg(feature = "write")]
+    pub fn to_writer(&self, writer: &mut ByteWriter) {
+        writer.u8(self.bytecode);
+        if let Some(types) = self.types {
+            writer.u8(types);
         }
     }
 }
