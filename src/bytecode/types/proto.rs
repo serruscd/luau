@@ -1,5 +1,7 @@
 use crate::{
-    bytecode::types::{constant::Constant, strings::Strings, version::Version},
+    bytecode::types::{
+        constant::Constant, instruction::Instruction, strings::Strings, version::Version,
+    },
     bytes::reader::ByteReader,
 };
 
@@ -124,7 +126,7 @@ pub struct Proto {
     pub flags: Option<u8>,
     pub type_info: Option<TypeInfo>,
 
-    pub code_table: Vec<u32>,
+    pub code_table: Vec<Instruction>,
     pub constant_table: Vec<Constant>,
     pub child_protos: Vec<usize>,
 
@@ -182,7 +184,7 @@ impl Proto {
         let sizecode = reader.varint_u32().ok()?;
         let mut code_table = Vec::with_capacity(sizecode as usize);
         for _ in 0..sizecode {
-            code_table.push(reader.u32().ok()?);
+            code_table.push(Instruction::from_reader(reader)?);
         }
 
         let sizek = reader.varint_u32().ok()?;

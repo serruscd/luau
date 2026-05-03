@@ -5,7 +5,7 @@ pub type Table = Vec<Box<str>>;
 pub type ConstantTable = HashMap<Box<str>, Value>;
 
 pub struct Block {
-    pub instructions: Vec<Instructions>,
+    pub instructions: Vec<Instruction>,
 }
 
 /// Represents a data primitive or a reference within the VM state.
@@ -56,7 +56,7 @@ pub enum Arithmetic {
 }
 
 /// The core instruction set for the Intermediate Representation.
-pub enum Instructions {
+pub enum Instruction {
     /// Moves a literal or register value into a target register.
     Load { target: Register, source: Value },
 
