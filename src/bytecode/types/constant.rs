@@ -14,10 +14,10 @@ pub enum Constant {
     Boolean(bool),
     Number(f64),
     Vector { x: f32, y: f32, z: f32, w: f32 },
-    String(String),
-    Import(String, Option<String>, Option<String>),
-    Table(Vec<String>),
-    ConstantTable(HashMap<String, Constant>),
+    String(Box<str>),
+    Import(Box<str>, Option<Box<str>>, Option<Box<str>>),
+    Table(Vec<Box<str>>),
+    ConstantTable(HashMap<Box<str>, Constant>),
     Closure(usize),
     Integer(i64),
 }
@@ -48,7 +48,7 @@ impl Constant {
             }
             LuauConstantType::LBC_CONSTANT_STRING => {
                 let index = reader.varint_u32().ok()? as usize;
-                Some(Self::String(string_table.get(index)?))
+                Some(Self::String(string_table.get(index)?.into_boxed_str()))
             }
             LuauConstantType::LBC_CONSTANT_IMPORT => {
                 let magic = reader.u32().ok()?;
